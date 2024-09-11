@@ -1,0 +1,35 @@
+input:
+  label: "redpanda_serverless"
+  kafka:
+    addresses:
+      - [Your Redpanda Cluster Address]
+    topics:
+      - inventory-updates
+    consumer_group: inventory-consumer-group
+    tls:
+      enabled: true
+    sasl:
+      mechanism: SCRAM-SHA-256
+      user: [Your Redpanda Cluster Username]
+      password: [Your Redpanda Cluster User's Password]
+pipeline:
+  processors:
+    - mapping: |
+        root.store_id = this.store_id
+        root.product_id = this.product_id
+        root.product_name = this.product_name
+        root.current_stock = this.current_stock
+        root.last_updated = this.last_updated
+output:
+  sql_raw:
+    driver: postgres
+    dsn: postgres://[postgres user]:[postgres password]@host.docker.internal:[postgres host port]/inventory?sslmode=disable
+    query: "INSERT INTO inventory (store_id, product_id, product_name, current_stock, last_updated) VALUES ($1, $2, $3, $4, $5);"
+    args_mapping: |
+      root = [
+        this.store_id,
+        this.product_id,
+        this.product_name,
+        this.current_stock,
+        this.last_updated,
+      ]
